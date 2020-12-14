@@ -1,6 +1,7 @@
 #include "Package.hpp"
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 #include <zip.h>
 #include <sqlite3.h>
@@ -39,6 +40,7 @@ namespace Anki
 	Package::~Package()
 	{
 		sqlite3_close(collection);
+		std::remove(tmpDbName.c_str());
 	}
 
 	int Package::Open(const std::string& filename)
@@ -70,20 +72,17 @@ namespace Anki
 	void Package::DumpAnki2File(const char* raw, size_t size)
 	{
 		// SQLite is kinda stupid and can't create a database from data stored in memory.
-		// It insists on opening a database file instead. I don't see a way around that unfortunately
+		// It also doesn't want file pointers. It just wants a filename...
 		// So I have to dump the database into a file first
-		// tmpDbName = std::to_string(rand()) + ".db";
-		tmpDbName = "test.db";
+		tmpDbName = std::filesystem::temp_directory_path().generic_string() + std::to_string(rand()) + ".db";
 		std::ofstream tmp_db(tmpDbName, std::ios::binary);
 		tmp_db.write(raw, size);
 		tmp_db.close();
 
-
-
 		int result = sqlite3_open(tmpDbName.c_str(), &collection);
 		if (result)
 		{
-			std::cerr << result << std::endl;
+			std::cerr << sqlite3_errmsg(collection) << " (" << result << ")" << std::endl;
 			return;
 		}
 
