@@ -1,6 +1,7 @@
 #include <iostream>
 #include <Package.hpp>
 #include <zip.h>
+#include <sqlite3.h>
 
 int main(int argc, char** argv)
 {
